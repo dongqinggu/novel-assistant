@@ -7,11 +7,16 @@ Simple CLI for novel assistant.
 import argparse
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
 
 from memory import MemoryManager, Memory, MemoryType
 from retrieve import MemoryRetriever, VectorStore
 from suggest import SuggestionGenerator, StructureProcessor
 from llm import LLMFactory
+
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def init_data_dir():
