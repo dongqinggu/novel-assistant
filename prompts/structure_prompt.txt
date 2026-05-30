@@ -18,12 +18,12 @@
 
 输出格式（JSON数组）：
 [
-  {
+  {{
     "type": "character"|"plot"|"callback",
     "name": "（仅character需要）人物名称",
     "content": "核心设定/剧情点/伏笔",
     "source": "用户输入内容摘要"
-  }
+  }}
 ]
 
 如果输入包含多个记忆点，请分别整理。

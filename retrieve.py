@@ -14,7 +14,7 @@ from memory import Memory, MemoryManager
 class EmbeddingProvider:
     """Handles text embedding generation"""
     
-    def __init__(self, model_name: str = "sentence-transformers/bge-small-zh-v1.5"):
+    def __init__(self, model_name: str = "BAAI/bge-small-zh-v1.5"):
         """Initialize embedding provider
         
         Args:
