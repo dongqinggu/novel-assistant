@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novel Assistant - 灵感箱</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>✨ Novel Assistant</h1>
+                <p class="subtitle">AI 驱动的创意写作辅助系统</p>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-items">
+                <button class="nav-btn active" data-tab="ideabox">灵感箱</button>
+                <button class="nav-btn" data-tab="outline">大纲</button>
+                <button class="nav-btn" data-tab="characters">人物</button>
+                <button class="nav-btn" data-tab="scenes">场景</button>
+                <button class="nav-btn" data-tab="plots">剧情</button>
+                <button class="nav-btn" data-tab="callbacks">伏笔</button>
+                <button class="nav-btn" data-tab="stats">统计</button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- 灵感箱 Tab -->
+            <section id="ideabox-tab" class="tab-content active">
+                <div class="ideabox-container">
+                    <h2>💡 灵感箱</h2>
+                    <p class="section-description">输入你的创意想法，系统会查找相关记忆并提供建议</p>
+                    
+                    <div class="ideabox-workflow">
+                        <!-- Step 1: Input -->
+                        <div class="ideabox-step">
+                            <h3>步骤 1: 输入想法</h3>
+                            <textarea 
+                                id="idea-input" 
+                                class="idea-input" 
+                                placeholder="在这里输入你的创意想法...&#10;例如：男主角应该有一个神秘的过去，让读者慢慢猜测他的真实身份..."
+                                rows="6"
+                            ></textarea>
+                            
+                            <div class="idea-options">
+                                <div class="option-group">
+                                    <label>搜索查询（可选）:</label>
+                                    <input 
+                                        type="text" 
+                                        id="search-query" 
+                                        class="search-input"
+                                        placeholder="如果不同于想法内容，输入搜索关键词..."
+                                    >
+                                </div>
+                                
+                                <div class="option-group">
+                                    <label>搜索范围:</label>
+                                    <div class="checkbox-group">
+                                        <label><input type="checkbox" value="character" checked> 人物</label>
+                                        <label><input type="checkbox" value="plot" checked> 剧情</label>
+                                        <label><input type="checkbox" value="callback" checked> 伏笔</label>
+                                        <label><input type="checkbox" value="outline"> 大纲</label>
+                                        <label><input type="checkbox" value="scene"> 场景</label>
+                                    </div>
+                                </div>
+                                
+                                <button id="process-btn" class="btn btn-primary">处理想法</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Results -->
+                        <div class="ideabox-step" id="results-container" style="display: none;">
+                            <h3>步骤 2: 查看建议</h3>
+                            
+                            <div class="results-grid">
+                                <!-- Memories Section -->
+                                <div class="result-section">
+                                    <h4>📚 相关记忆</h4>
+                                    <div id="memories-list" class="memories-list">
+                                        <p class="loading">加载中...</p>
+                                    </div>
+                                </div>
+
+                                <!-- AI Suggestions Section -->
+                                <div class="result-section">
+                                    <h4>🤖 AI 建议</h4>
+                                    <div id="suggestions-list" class="suggestions-list">
+                                        <p class="loading">生成中...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Formatted Idea -->
+                            <div class="result-section full-width">
+                                <h4>📝 完善后的想法</h4>
+                                <div id="formatted-idea" class="formatted-idea">
+                                    <p class="loading">生成中...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Confirm -->
+                        <div class="ideabox-step" id="confirm-container" style="display: none;">
+                            <h3>步骤 3: 确认保存</h3>
+                            
+                            <div class="confirm-form">
+                                <div class="form-group">
+                                    <label for="confirm-type">记忆类型:</label>
+                                    <select id="confirm-type" class="form-control">
+                                        <option value="plot">剧情</option>
+                                        <option value="character">人物</option>
+                                        <option value="outline">大纲</option>
+                                        <option value="scene">场景</option>
+                                        <option value="callback">伏笔</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="confirm-name">名称 (可选):</label>
+                                    <input 
+                                        type="text" 
+                                        id="confirm-name" 
+                                        class="form-control"
+                                        placeholder="例如：第三章转折点、李明人物设定等"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="confirm-content">内容:</label>
+                                    <textarea 
+                                        id="confirm-content" 
+                                        class="form-control" 
+                                        rows="6"
+                                    ></textarea>
+                                </div>
+
+                                <div class="button-group">
+                                    <button id="confirm-save-btn" class="btn btn-success">保存到记忆</button>
+                                    <button id="confirm-cancel-btn" class="btn btn-secondary">取消</button>
+                                </div>
+                            </div>
+
+                            <div id="save-success" class="alert alert-success" style="display: none;">
+                                ✓ 记忆已保存！
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 大纲 Tab -->
+            <section id="outline-tab" class="tab-content">
+                <div class="memory-section">
+                    <h2>📋 大纲</h2>
+                    <p class="section-description">管理故事大纲和整体框架</p>
+                    <div id="outline-list" class="memory-list">加载中...</div>
+                    <button class="btn btn-primary" onclick="showAddMemoryForm('outline')">+ 新增大纲</button>
+                </div>
+            </section>
+
+            <!-- 人物 Tab -->
+            <section id="characters-tab" class="tab-content">
+                <div class="memory-section">
+                    <h2>👥 人物</h2>
+                    <p class="section-description">管理角色设定和人物关系</p>
+                    <div id="characters-list" class="memory-list">加载中...</div>
+                    <button class="btn btn-primary" onclick="showAddMemoryForm('character')">+ 新增人物</button>
+                </div>
+            </section>
+
+            <!-- 场景 Tab -->
+            <section id="scenes-tab" class="tab-content">
+                <div class="memory-section">
+                    <h2>🎬 场景</h2>
+                    <p class="section-description">管理故事场景和环境设定</p>
+                    <div id="scenes-list" class="memory-list">加载中...</div>
+                    <button class="btn btn-primary" onclick="showAddMemoryForm('scene')">+ 新增场景</button>
+                </div>
+            </section>
+
+            <!-- 剧情 Tab -->
+            <section id="plots-tab" class="tab-content">
+                <div class="memory-section">
+                    <h2>🎭 剧情</h2>
+                    <p class="section-description">管理故事情节和事件</p>
+                    <div id="plots-list" class="memory-list">加载中...</div>
+                    <button class="btn btn-primary" onclick="showAddMemoryForm('plot')">+ 新增剧情</button>
+                </div>
+            </section>
+
+            <!-- 伏笔 Tab -->
+            <section id="callbacks-tab" class="tab-content">
+                <div class="memory-section">
+                    <h2>✨ 伏笔</h2>
+                    <p class="section-description">管理故事伏笔和暗示</p>
+                    <div id="callbacks-list" class="memory-list">加载中...</div>
+                    <button class="btn btn-primary" onclick="showAddMemoryForm('callback')">+ 新增伏笔</button>
+                </div>
+            </section>
+
+            <!-- 统计 Tab -->
+            <section id="stats-tab" class="tab-content">
+                <div class="stats-section">
+                    <h2>📊 统计信息</h2>
+                    <div id="stats-container" class="stats-container">加载中...</div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 Novel Assistant - AI 创意写作辅助系统</p>
+        </footer>
+    </div>
+
+    <!-- Add Memory Modal -->
+    <div id="add-memory-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeAddMemoryModal()">&times;</span>
+            <h3>新增记忆</h3>
+            <form id="add-memory-form">
+                <div class="form-group">
+                    <label for="memory-type">类型:</label>
+                    <select id="memory-type" required>
+                        <option value="character">人物</option>
+                        <option value="plot">剧情</option>
+                        <option value="callback">伏笔</option>
+                        <option value="outline">大纲</option>
+                        <option value="scene">场景</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="memory-name">名称 (可选):</label>
+                    <input type="text" id="memory-name" placeholder="例如：李明、第一章等">
+                </div>
+                <div class="form-group">
+                    <label for="memory-content">内容:</label>
+                    <textarea id="memory-content" rows="6" required></textarea>
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="btn btn-success">保存</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAddMemoryModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
