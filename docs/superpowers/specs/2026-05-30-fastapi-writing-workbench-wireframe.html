@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>小说记忆工作台线框图</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+      color: #1f2933;
+      background: #f4f6f8;
+    }
+    .app { display: grid; grid-template-columns: 220px 1fr 320px; min-height: 100vh; }
+    .side { background: #17202a; color: #e8edf2; padding: 18px 14px; }
+    .brand { font-weight: 700; margin-bottom: 22px; }
+    .nav { display: grid; gap: 8px; }
+    .nav div { padding: 10px 12px; border-radius: 6px; color: #b9c4cf; }
+    .nav .active { background: #2f80ed; color: white; }
+    .main { padding: 18px; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .status { display: flex; gap: 10px; font-size: 13px; color: #52616f; }
+    .pill { border: 1px solid #d5dce3; border-radius: 999px; padding: 5px 10px; background: white; }
+    .panel { background: white; border: 1px solid #dfe5eb; border-radius: 8px; padding: 14px; }
+    .input { height: 170px; border: 1px solid #c9d3dd; border-radius: 6px; padding: 12px; color: #6b7785; background: #fbfcfd; }
+    .toolbar { display: flex; gap: 10px; margin-top: 12px; }
+    button { border: 0; border-radius: 6px; padding: 9px 12px; background: #2f80ed; color: white; }
+    button.secondary { background: #edf2f7; color: #27313b; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+    .card { border: 1px solid #e0e6ed; border-radius: 8px; padding: 12px; background: #fff; }
+    .card h3 { margin: 0 0 8px; font-size: 16px; }
+    .card p { margin: 0; color: #5f6c7b; line-height: 1.5; }
+    .right { background: #ffffff; border-left: 1px solid #dfe5eb; padding: 18px 14px; }
+    .section-title { font-size: 14px; font-weight: 700; margin: 0 0 10px; }
+    .memory { border: 1px solid #e0e6ed; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+    .tag { display: inline-block; font-size: 12px; background: #eef5ff; color: #2f80ed; padding: 3px 7px; border-radius: 999px; margin-bottom: 6px; }
+    .confirm { width: 100%; margin-top: 8px; }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .side, .right { border: 0; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="brand">小说记忆工作台</div>
+      <div class="nav">
+        <div class="active">灵感箱</div>
+        <div>大纲</div>
+        <div>人物</div>
+        <div>场景</div>
+        <div>剧情</div>
+        <div>伏笔/回调</div>
+        <div>世界观</div>
+        <div>全部记忆</div>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <h2>灵感箱</h2>
+        <div class="status">
+          <span class="pill">记忆 128</span>
+          <span class="pill">向量库已同步</span>
+          <span class="pill">LLM 已配置</span>
+        </div>
+      </div>
+      <section class="panel">
+        <div class="input">输入你的构思：例如“顾北辰在雨夜码头看到红怀表，突然不敢靠近海水。”</div>
+        <div class="toolbar">
+          <button>检索记忆</button>
+          <button>生成建议</button>
+          <button class="secondary">清空</button>
+        </div>
+      </section>
+      <div class="grid">
+        <section class="card">
+          <h3>AI 建议</h3>
+          <p>把红怀表作为童年事故的触发物。码头场景可强化潮湿、噪声、闪回三类感官线索。</p>
+        </section>
+        <section class="card">
+          <h3>候选记忆</h3>
+          <p>类型：场景<br>标题：雨夜码头触发回忆<br>内容：顾北辰看到红怀表，引发童年事故相关记忆。</p>
+        </section>
+      </div>
+    </main>
+    <aside class="right">
+      <div class="section-title">相关记忆</div>
+      <div class="memory"><span class="tag">人物</span><br>顾北辰害怕海水，可能与童年事故有关。</div>
+      <div class="memory"><span class="tag">伏笔</span><br>红怀表与父亲失踪有关。</div>
+      <div class="section-title">待确认新增</div>
+      <div class="memory"><span class="tag">场景</span><br>雨夜码头触发回忆</div>
+      <button class="confirm">确认入库</button>
+    </aside>
+  </div>
+</body>
+</html>
