@@ -63,7 +63,6 @@ class VectorStore:
         """
         try:
             import chromadb
-            from chromadb.config import Settings
         except ImportError:
             raise ImportError("chromadb not installed. Install with: pip install chroma-db")
         
@@ -72,13 +71,8 @@ class VectorStore:
         
         self.embedding_provider = embedding_provider or EmbeddingProvider()
         
-        # Initialize Chroma client
-        settings = chromadb.config.Settings(
-            chroma_db_impl="duckdb+parquet",
-            persist_directory=str(self.persist_dir),
-            anonymized_telemetry=False,
-        )
-        self.client = chromadb.Client(settings)
+        # Initialize Chroma client using new PersistentClient API
+        self.client = chromadb.PersistentClient(path=str(self.persist_dir))
         self.collection = self.client.get_or_create_collection(
             name="novel_memories",
             metadata={"hnsw:space": "cosine"}
@@ -187,7 +181,9 @@ class VectorStore:
     
     def persist(self) -> None:
         """Persist vector database to disk"""
-        self.client.persist()
+        # PersistentClient automatically persists, so this is now a no-op
+        # but kept for API compatibility
+        pass
 
 
 class MemoryRetriever:
