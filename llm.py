@@ -31,6 +31,10 @@ class BaseLLM(ABC):
         if not self.api_key:
             raise ValueError(f"API key not found for {config.provider}")
         
+        # Load model from config or environment variable
+        if not self.config.model:
+            self.config.model = os.getenv(f"{config.provider.upper()}_MODEL")
+        
         # Load base_url from config or environment
         self.base_url = config.base_url or os.getenv(f"{config.provider.upper()}_BASE_URL")
     
@@ -312,12 +316,16 @@ class LLMFactory:
         Environment Variables:
             NOVEL_LLM_PROVIDER: LLM provider (openai, anthropic, qwen, deepseek)
             OPENAI_API_KEY: API key for OpenAI
+            OPENAI_MODEL: Model name for OpenAI (optional)
             OPENAI_BASE_URL: Custom base URL for OpenAI (optional)
             ANTHROPIC_API_KEY: API key for Anthropic
+            ANTHROPIC_MODEL: Model name for Anthropic (optional)
             ANTHROPIC_BASE_URL: Custom base URL for Anthropic (optional)
             QWEN_API_KEY: API key for Qwen
+            QWEN_MODEL: Model name for Qwen (optional)
             QWEN_BASE_URL: Custom base URL for Qwen (optional)
             DEEPSEEK_API_KEY: API key for DeepSeek
+            DEEPSEEK_MODEL: Model name for DeepSeek (optional)
             DEEPSEEK_BASE_URL: Custom base URL for DeepSeek (optional)
         """
         if provider is None:
