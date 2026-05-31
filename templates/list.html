@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - 创意工坊{% endblock %}
+
+{% block content %}
+<div class="list-page">
+    <div class="page-header">
+        <h2 class="page-title">{{ page_title }}</h2>
+        <button class="btn btn-primary" onclick="showAddModal()">+ 新增</button>
+    </div>
+    
+    {% if memories %}
+    <div class="memory-list">
+        {% for memory in memories %}
+        <div class="memory-item" data-id="{{ memory.id }}" onclick="viewMemory('{{ memory.id }}')">
+            <div class="memory-header">
+                <span class="memory-icon">{{ memory.type_icon }}</span>
+                <span class="memory-title">{{ memory.title }}</span>
+                <span class="memory-date">{{ memory.updated_at[:10] }}</span>
+            </div>
+            <div class="memory-content">{{ memory.content }}</div>
+            {% if memory.tags %}
+            <div class="memory-tags">
+                {% for tag in memory.tags %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="memory-actions" onclick="event.stopPropagation()">
+                <button class="btn btn-sm" onclick="viewMemory('{{ memory.id }}')">查看</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteMemory('{{ memory.id }}')">删除</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>暂无{{ page_title }}记忆</p>
+        <p class="hint">在灵感箱中输入构思，生成后确认入库</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block right_panel %}
+<div class="panel-section">
+    <h3>📊 统计</h3>
+    <p>总数: {{ memories|length }}</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const currentPage = '{{ page }}';
+
+function showAddModal() {
+    const type = currentPage;
+    window.location.href = '/?type=' + type;
+}
+
+function viewMemory(id) {
+    window.location.href = '/entity/' + id;
+}
+
+async function deleteMemory(id) {
+    if (!confirm('确定删除这条记忆吗？')) return;
+    
+    try {
+        const resp = await fetch(`/api/memories/${id}`, { method: 'DELETE' });
+        const data = await resp.json();
+        if (data.code === 0) {
+            window.location.reload();
+        } else {
+            alert('删除失败: ' + data.message);
+        }
+    } catch (e) {
+        alert('删除失败: ' + e.message);
+    }
+}
+</script>
+{% endblock %}

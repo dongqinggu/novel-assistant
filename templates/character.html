@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}人物 - 创意工坊{% endblock %}
+
+{% block content %}
+<div class="character-page">
+    <div class="page-header">
+        <h2 class="page-title">👤 人物</h2>
+        <button class="btn btn-primary" onclick="window.location.href='/?type=character'">+ 新增人物</button>
+    </div>
+    
+    {% if characters %}
+    <div class="character-list">
+        {% for name, memories in characters.items() %}
+        <div class="character-card" onclick="viewCharacter('{{ name }}')">
+            <div class="character-header">
+                <span class="character-icon">👤</span>
+                <span class="character-name">{{ name }}</span>
+                <span class="character-count">({{ memories|length }}条记忆)</span>
+            </div>
+            <div class="character-memories">
+                {% for memory in memories[:3] %}
+                <div class="memory-brief" onclick="event.stopPropagation(); window.location.href='/entity/{{ memory.id }}'">
+                    <span class="memory-dot">•</span>
+                    <span class="memory-text">{{ memory.content[:40] }}{% if memory.content|length > 40 %}...{% endif %}</span>
+                </div>
+                {% endfor %}
+                {% if memories|length > 3 %}
+                <div class="memory-brief more">...还有 {{ memories|length - 3 }} 条记忆</div>
+                {% endif %}
+            </div>
+            <div class="character-actions" onclick="event.stopPropagation()">
+                <button class="btn btn-sm" onclick="window.location.href='/entity/{{ memories[0].id }}'">查看详情</button>
+                <button class="btn btn-sm" onclick="generateAdviseForCharacter('{{ name }}')">生成建议</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>暂无人物记忆</p>
+        <p class="hint">在灵感箱中输入人物设定，生成后确认入库</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block right_panel %}
+<div class="panel-section">
+    <h3>📊 统计</h3>
+    <p>人物数: {{ characters|length }}</p>
+    <p>总记忆: {% set total = 0 %}{% for name, memories in characters.items() %}{% set total = total + memories|length %}{% endfor %}{{ total }}</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function generateAdviseForCharacter(name) {
+    window.location.href = '/?type=character&name=' + encodeURIComponent(name);
+}
+
+function viewCharacter(name) {
+    window.location.href = '/?type=character&name=' + encodeURIComponent(name);
+}
+</script>
+{% endblock %}

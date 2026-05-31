@@ -191,6 +191,116 @@ class SuggestionGenerator:
                     suggestions.append(line)
         
         return suggestions
+    
+    def generate_advise(
+        self,
+        query: str,
+        related_memories: List[Memory],
+        memory_type: str = "auto",
+    ) -> Dict:
+        """Generate suggestions and candidate memories for inspiration box
+        
+        Args:
+            query: User's creative input/idea
+            related_memories: List of retrieved related memories
+            memory_type: Target memory type (auto/outline/character/scene/plot/callback/worldbuilding/note)
+            
+        Returns:
+            Dict with 'suggestions' and 'candidate_memories'
+        """
+        # Format memories for prompt
+        memories_text = self._format_memories(related_memories)
+        
+        # Build prompt
+        type_hint = f"目标类型：{memory_type}" if memory_type != "auto" else "自动判断类型"
+        
+        prompt = f"""你是一个小说创作记忆助手。
+
+用户输入了一个创作构思，请基于已有记忆给出建议，并整理成结构化的候选记忆。
+
+已有相关记忆：
+{memories_text}
+
+用户构思：
+{query}
+
+{type_hint}
+
+请输出 JSON 格式：
+{{
+  "suggestions": ["建议1", "建议2", ...],
+  "candidate_memories": [
+    {{
+      "type": "character|plot|callback|outline|scene|worldbuilding|note",
+      "title": "标题（character类型用name字段）",
+      "name": "人物名（仅character类型）",
+      "content": "核心内容",
+      "tags": ["标签1", "标签2"]
+    }}
+  ]
+}}
+
+要求：
+1. suggestions 给出 3-5 条创作建议，开放而非强制
+2. candidate_memories 整理 1-3 条候选记忆
+3. 保持与已有记忆的一致性
+4. 只输出 JSON，不要其他文本
+"""
+        
+        # Call LLM
+        response = self.llm.call(prompt)
+        
+        # Parse response
+        return self._parse_advise_response(response, query)
+    
+    def _parse_advise_response(self, response: str, original_query: str) -> Dict:
+        """Parse AI response for inspiration advise
+        
+        Args:
+            response: LLM response
+            original_query: Original user query
+            
+        Returns:
+            Dict with suggestions and candidate_memories
+        """
+        result = {
+            "suggestions": [],
+            "candidate_memories": []
+        }
+        
+        try:
+            # Try to extract JSON from response
+            start_idx = response.find('{')
+            end_idx = response.rfind('}') + 1
+            if start_idx >= 0 and end_idx > start_idx:
+                json_str = response[start_idx:end_idx]
+                data = json.loads(json_str)
+                
+                # Extract suggestions
+                if 'suggestions' in data:
+                    result['suggestions'] = data['suggestions']
+                
+                # Extract candidate memories
+                if 'candidate_memories' in data:
+                    for item in data['candidate_memories']:
+                        if isinstance(item, dict):
+                            candidate = {
+                                'type': item.get('type', 'note'),
+                                'title': item.get('title'),
+                                'name': item.get('name'),
+                                'content': item.get('content', ''),
+                                'tags': item.get('tags', []),
+                            }
+                            # For character type, use name as title
+                            if candidate['type'] == 'character' and candidate.get('name'):
+                                candidate['title'] = candidate['name']
+                            result['candidate_memories'].append(candidate)
+        except json.JSONDecodeError:
+            # Fallback: treat entire response as suggestions
+            lines = [l.strip() for l in response.split('\n') if l.strip() and len(l.strip()) > 5]
+            result['suggestions'] = lines[:5]
+        
+        return result
 
 
 class StructureProcessor:
@@ -285,6 +395,8 @@ class StructureProcessor:
                             type=item.get('type', 'plot'),
                             content=item.get('content', ''),
                             name=item.get('name'),
+                            title=item.get('title'),
+                            tags=item.get('tags', []),
                             source=user_input[:100]  # Store first 100 chars as source
                         )
                         if memory.content:
@@ -292,8 +404,9 @@ class StructureProcessor:
         except json.JSONDecodeError:
             # If JSON parsing fails, create a default memory from input
             memory = Memory(
-                type="plot",
+                type="note",
                 content=user_input,
+                title=user_input[:30] if len(user_input) > 30 else user_input,
                 source=user_input[:100]
             )
             memories.append(memory)

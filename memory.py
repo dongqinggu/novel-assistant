@@ -20,15 +20,22 @@ class MemoryType(Enum):
     CHARACTER = "character"
     PLOT = "plot"
     CALLBACK = "callback"
+    OUTLINE = "outline"
+    SCENE = "scene"
+    WORLDBUILDING = "worldbuilding"
+    NOTE = "note"
 
 
 @dataclass
 class Memory:
     """Core Memory data structure"""
-    type: str  # character, plot, callback
+    type: str  # character, plot, callback, outline, scene, worldbuilding, note
     content: str
     name: Optional[str] = None  # For character memories
+    title: Optional[str] = None  # For non-character types
     source: Optional[str] = None  # Original user input
+    tags: Optional[List[str]] = None  # Tags for filtering
+    status: Optional[str] = None  # confirmed, pending, draft
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
     id: Optional[str] = None  # UUID for tracking
@@ -41,10 +48,23 @@ class Memory:
             self.created_at = datetime.now().isoformat()
         if self.updated_at is None:
             self.updated_at = datetime.now().isoformat()
+        if self.tags is None:
+            self.tags = []
+        if self.status is None:
+            self.status = "confirmed"
     
     def to_dict(self) -> Dict:
         """Convert to dictionary"""
         return asdict(self)
+    
+    def get_display_title(self) -> str:
+        """Get display title for UI"""
+        if self.title:
+            return self.title
+        if self.name:
+            return self.name
+        # Fallback: first 30 chars of content
+        return self.content[:30] + "..." if len(self.content) > 30 else self.content
 
 
 class MemoryManager:
@@ -68,6 +88,13 @@ class MemoryManager:
             try:
                 with open(file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
+                    # Ensure backward compatibility for new fields
+                    if 'tags' not in data:
+                        data['tags'] = []
+                    if 'title' not in data:
+                        data['title'] = None
+                    if 'status' not in data:
+                        data['status'] = 'confirmed'
                     memory = Memory(**data)
                     self.memories[memory.id] = memory
             except (json.JSONDecodeError, TypeError) as e:

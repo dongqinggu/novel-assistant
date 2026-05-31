@@ -274,6 +274,20 @@ class MemoryRetriever:
     def sync_memories_to_vector_db(self) -> None:
         """Sync all memories from manager to vector database"""
         all_memories = self.memory_manager.get_all_memories()
+        
+        # Get existing IDs from vector store
+        try:
+            existing_ids = set()
+            # Try to get some records to check if collection has data
+            result = self.vector_store.collection.get(limit=1000)
+            if result and result['ids']:
+                existing_ids = set(result['ids'])
+        except Exception:
+            existing_ids = set()
+        
+        # Only add memories that don't exist in vector store
         for memory in all_memories:
-            self.vector_store.add_memory(memory)
+            if memory.id not in existing_ids:
+                self.vector_store.add_memory(memory)
+        
         self.vector_store.persist()

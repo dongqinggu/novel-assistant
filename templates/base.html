@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}创意工坊{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 顶部工具栏 -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+                <h1 class="app-title">创意工坊</h1>
+            </div>
+            <div class="top-bar-right">
+                <span class="stat-item">记忆: {{ stats.total }}</span>
+                <a href="/api/export" class="btn btn-sm" target="_blank">导出</a>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <!-- 左侧导航 -->
+            <nav class="sidebar" id="sidebar">
+                <ul class="nav-list">
+                    <li class="nav-item {% if page == 'inspiration' %}active{% endif %}">
+                        <a href="/">💡 灵感箱</a>
+                    </li>
+                    <li class="nav-item {% if page == 'outline' %}active{% endif %}">
+                        <a href="/outline">📋 大纲</a>
+                    </li>
+                    <li class="nav-item {% if page == 'character' %}active{% endif %}">
+                        <a href="/character">👤 人物</a>
+                    </li>
+                    <li class="nav-item {% if page == 'scene' %}active{% endif %}">
+                        <a href="/scene">📍 场景</a>
+                    </li>
+                    <li class="nav-item {% if page == 'plot' %}active{% endif %}">
+                        <a href="/plot">📖 剧情</a>
+                    </li>
+                    <li class="nav-item {% if page == 'callback' %}active{% endif %}">
+                        <a href="/callback">🔗 伏笔</a>
+                    </li>
+                    <li class="nav-item {% if page == 'worldbuilding' %}active{% endif %}">
+                        <a href="/worldbuilding">🌍 世界观</a>
+                    </li>
+                    <li class="nav-item {% if page == 'memories' %}active{% endif %}">
+                        <a href="/memories">📚 全部记忆</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- 手机端遮罩层 -->
+            <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+
+            <!-- 中央工作区 -->
+            <main class="content-area">
+                {% block content %}{% endblock %}
+            </main>
+
+            <!-- 右侧面板 -->
+            <aside class="right-panel">
+                {% block right_panel %}{% endblock %}
+            </aside>
+        </div>
+    </div>
+
+    <script src="/static/js/common.js"></script>
+    <script>
+    function toggleMobileMenu() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebar-overlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+    // 点击导航链接后自动关闭菜单
+    document.querySelectorAll('.nav-item a').forEach(function(link) {
+        link.addEventListener('click', function() {
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        });
+    });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

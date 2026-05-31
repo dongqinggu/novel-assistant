@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}灵感箱 - 小说创作记忆工作台{% endblock %}
+
+{% block content %}
+<div class="inspiration-page">
+    <h2 class="page-title">💡 灵感箱</h2>
+    
+    <!-- 输入区 -->
+    <div class="input-section">
+        <textarea 
+            id="inspiration-input" 
+            class="inspiration-textarea" 
+            placeholder="输入你的构思、灵感、想法...
+
+例如：顾北辰在雨夜码头再次看见红怀表，触发童年事故记忆。薄荷发现这个秘密后决定帮助他。"
+            rows="6"
+        ></textarea>
+        
+        <!-- 类型选择 -->
+        <div class="type-selector">
+            <span class="type-label">类型提示：</span>
+            <label class="type-option">
+                <input type="radio" name="memory-type" value="auto" checked>
+                <span>自动判断</span>
+            </label>
+            <label class="type-option">
+                <input type="radio" name="memory-type" value="outline">
+                <span>大纲</span>
+            </label>
+            <label class="type-option">
+                <input type="radio" name="memory-type" value="character">
+                <span>人物</span>
+            </label>
+            <label class="type-option">
+                <input type="radio" name="memory-type" value="scene">
+                <span>场景</span>
+            </label>
+            <label class="type-option">
+                <input type="radio" name="memory-type" value="plot">
+                <span>剧情</span>
+            </label>
+            <label class="type-option">
+                <input type="radio" name="memory-type" value="callback">
+                <span>伏笔</span>
+            </label>
+            <label class="type-option">
+                <input type="radio" name="memory-type" value="worldbuilding">
+                <span>世界观</span>
+            </label>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+            <button id="btn-process" class="btn btn-primary" onclick="processInspiration()">
+                ✨ 智能处理
+            </button>
+            <button id="btn-search" class="btn btn-secondary" onclick="searchMemories()">
+                🔍 仅检索
+            </button>
+            <button class="btn btn-secondary" onclick="clearAll()">
+                🗑️ 清空
+            </button>
+        </div>
+    </div>
+    
+    <!-- 处理结果区域 -->
+    <div id="process-result" class="process-result" style="display: none;">
+        <h3>📝 AI 格式化结果</h3>
+        <div id="formatted-memories" class="formatted-memories"></div>
+        
+        <h3>🔗 匹配到的本地实体</h3>
+        <div id="matched-entities" class="matched-entities"></div>
+        
+        <div class="action-buttons">
+            <button class="btn btn-success" onclick="confirmAll()">
+                ✓ 确认更新全部
+            </button>
+            <button class="btn btn-secondary" onclick="cancelProcess()">
+                取消
+            </button>
+        </div>
+    </div>
+    
+    <!-- AI 建议区域 -->
+    <div id="suggestions-section" class="suggestions-section" style="display: none;">
+        <h3>💡 AI 创作建议</h3>
+        <div id="suggestions-list" class="suggestions-list"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block right_panel %}
+<div class="panel-section">
+    <h3>🔍 相关记忆</h3>
+    <div id="related-memories" class="related-memories">
+        <p class="empty-hint">输入构思后点击"智能处理"或"仅检索"</p>
+    </div>
+</div>
+
+<div class="panel-section">
+    <h3>📊 快捷操作</h3>
+    <button class="btn btn-sm btn-block" onclick="syncVectorDB()">同步向量库</button>
+    <button class="btn btn-sm btn-block" onclick="showAdvise()">获取创作建议</button>
+</div>
+
+<div class="panel-section">
+    <h3>📚 快速导航</h3>
+    <div class="quick-nav">
+        <a href="/character" class="quick-nav-item">👤 人物</a>
+        <a href="/scene" class="quick-nav-item">📍 场景</a>
+        <a href="/plot" class="quick-nav-item">📖 剧情</a>
+        <a href="/callback" class="quick-nav-item">🔗 伏笔</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/inspiration.js"></script>
+{% endblock %}

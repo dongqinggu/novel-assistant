@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - 创意工坊{% endblock %}
+
+{% block content %}
+<div class="cards-page">
+    <div class="page-header">
+        <h2 class="page-title">{{ page_title }}</h2>
+        <button class="btn btn-primary" onclick="window.location.href='/?type={{ page }}'">+ 新增</button>
+    </div>
+    
+    {% if memories %}
+    <div class="cards-grid">
+        {% for memory in memories %}
+        <div class="card-item" data-id="{{ memory.id }}" onclick="viewMemory('{{ memory.id }}')">
+            <div class="card-header">
+                <span class="card-icon">{{ memory.type_icon }}</span>
+                <span class="card-title">{{ memory.title }}</span>
+            </div>
+            <div class="card-content">{{ memory.content[:100] }}{% if memory.content|length > 100 %}...{% endif %}</div>
+            {% if memory.tags %}
+            <div class="card-tags">
+                {% for tag in memory.tags[:3] %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+                {% if memory.tags|length > 3 %}
+                <span class="tag">+{{ memory.tags|length - 3 }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+            <div class="card-footer" onclick="event.stopPropagation()">
+                <span class="card-date">{{ memory.updated_at[:10] }}</span>
+                <div class="card-actions">
+                    <button class="btn-link" onclick="viewMemory('{{ memory.id }}')">查看</button>
+                    <button class="btn-link text-danger" onclick="deleteMemory('{{ memory.id }}')">删除</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>暂无{{ page_title }}记忆</p>
+        <p class="hint">在灵感箱中输入构思，生成后确认入库</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block right_panel %}
+<div class="panel-section">
+    <h3>📊 统计</h3>
+    <p>总数: {{ memories|length }}</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function viewMemory(id) {
+    window.location.href = '/entity/' + id;
+}
+
+async function deleteMemory(id) {
+    if (!confirm('确定删除这条记忆吗？')) return;
+    
+    try {
+        const resp = await fetch(`/api/memories/${id}`, { method: 'DELETE' });
+        const data = await resp.json();
+        if (data.code === 0) {
+            window.location.reload();
+        } else {
+            alert('删除失败: ' + data.message);
+        }
+    } catch (e) {
+        alert('删除失败: ' + e.message);
+    }
+}
+</script>
+{% endblock %}

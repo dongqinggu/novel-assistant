@@ -1,0 +1,625 @@
+{% extends "base.html" %}
+
+{% block title %}{{ entity_title }} - {{ entity.name or entity.title }} - 小说创作记忆工作台{% endblock %}
+
+{% block content %}
+<div class="entity-detail-page">
+    <!-- 实体头部信息 -->
+    <div class="entity-header">
+        <div class="entity-header-main">
+            <span class="entity-type-badge type-{{ entity.type }}">{{ getTypeName(entity.type) }}</span>
+            <h1 class="entity-name">{{ entity.name or entity.title }}</h1>
+        </div>
+        <div class="entity-actions">
+            <button class="btn btn-primary" onclick="showInspirationInput()">💡 添加灵感</button>
+            <a href="/{{ entity.type }}s" class="btn btn-secondary">← 返回列表</a>
+        </div>
+    </div>
+
+    <!-- 实体内容 -->
+    <div class="entity-content">
+        <div class="content-card">
+            <h3>内容</h3>
+            <div class="content-text">{{ entity.content }}</div>
+            {% if entity.tags %}
+            <div class="entity-tags">
+                {% for tag in entity.tags %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 灵感输入区（默认隐藏） -->
+    <div id="inspiration-section" class="inspiration-section" style="display: none;">
+        <h3>💡 输入灵感更新实体</h3>
+        <textarea 
+            id="inspiration-input" 
+            class="inspiration-textarea" 
+            placeholder="输入关于这个{{ getTypeName(entity.type) }}的新想法、细节补充或修改建议...
+
+例如：给这个人物增加一个童年阴影的背景故事。"
+            rows="4"
+        ></textarea>
+        <div class="action-buttons">
+            <button class="btn btn-success" onclick="processInspiration()">
+                ✨ 格式化并匹配
+            </button>
+            <button class="btn btn-secondary" onclick="hideInspirationInput()">
+                取消
+            </button>
+        </div>
+    </div>
+
+    <!-- 格式化结果（动态显示） -->
+    <div id="format-result" class="format-result" style="display: none;">
+        <h3>📝 AI格式化结果</h3>
+        <div id="formatted-memories"></div>
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="confirmUpdate()">
+                ✓ 确认更新
+            </button>
+            <button class="btn btn-secondary" onclick="cancelUpdate()">
+                取消
+            </button>
+        </div>
+    </div>
+
+    <!-- 相关记忆 -->
+    {% if related_memories %}
+    <div class="related-section">
+        <h3>🔗 相关记忆</h3>
+        <div class="related-list">
+            {% for mem in related_memories %}
+            <div class="related-item" onclick="navigateToEntity('{{ mem.id }}', '{{ mem.type }}')">
+                <div class="related-header">
+                    <span class="related-type">{{ getTypeIcon(mem.type) }} {{ getTypeName(mem.type) }}</span>
+                    <span class="related-title">{{ mem.name or mem.title }}</span>
+                </div>
+                <div class="related-content">{{ mem.content[:100] }}{% if mem.content|length > 100 %}...{% endif %}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 同一类型的其他实体 -->
+    {% if other_entities %}
+    <div class="related-section">
+        <h3>📚 其他{{ getTypeName(entity.type) }}</h3>
+        <div class="entity-mini-list">
+            {% for other in other_entities %}
+            {% if other.id != entity.id %}
+            <a href="/entity/{{ other.id }}" class="entity-mini-item">
+                <span class="entity-mini-name">{{ other.name or other.title }}</span>
+                <span class="entity-mini-preview">{{ other.content[:50] }}{% if other.content|length > 50 %}...{% endif %}</span>
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block right_panel %}
+<div class="panel-section">
+    <h3>📊 实体信息</h3>
+    <div class="entity-meta">
+        <div class="meta-item">
+            <span class="meta-label">类型</span>
+            <span class="meta-value">{{ getTypeName(entity.type) }}</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">创建时间</span>
+            <span class="meta-value">{{ formatDate(entity.created_at) }}</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">更新时间</span>
+            <span class="meta-value">{{ formatDate(entity.updated_at) }}</span>
+        </div>
+        {% if entity.source %}
+        <div class="meta-item">
+            <span class="meta-label">来源</span>
+            <span class="meta-value">{{ entity.source }}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="panel-section">
+    <h3>⚡ 快捷操作</h3>
+    <button class="btn btn-sm btn-block" onclick="showInspirationInput()">添加灵感</button>
+    <button class="btn btn-sm btn-block btn-danger" onclick="deleteEntity()">删除实体</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const entityId = '{{ entity.id }}';
+const entityType = '{{ entity.type }}';
+let formattedResult = null;
+
+function showInspirationInput() {
+    document.getElementById('inspiration-section').style.display = 'block';
+    document.getElementById('inspiration-input').focus();
+}
+
+function hideInspirationInput() {
+    document.getElementById('inspiration-section').style.display = 'none';
+    document.getElementById('inspiration-input').value = '';
+}
+
+async function processInspiration() {
+    const content = document.getElementById('inspiration-input').value.trim();
+    if (!content) {
+        showMessage('请输入灵感内容', 'error');
+        return;
+    }
+
+    showMessage('正在格式化并匹配相关记忆...');
+
+    try {
+        // 1. 格式化灵感
+        const formatRes = await api('/api/ideas/format', {
+            method: 'POST',
+            body: { content, memory_type: entityType }
+        });
+
+        if (formatRes.code !== 0) {
+            showMessage(formatRes.message, 'error');
+            return;
+        }
+
+        formattedResult = formatRes.data.memories;
+
+        // 2. 搜索相关记忆
+        const searchRes = await api('/api/inspirations/search', {
+            method: 'POST',
+            body: { query: content, type: 'auto' }
+        });
+
+        // 3. 显示结果
+        displayFormatResult(formattedResult, searchRes.data.memories);
+
+    } catch (e) {
+        showMessage('处理失败: ' + e.message, 'error');
+    }
+}
+
+function displayFormatResult(memories, relatedMemories) {
+    const container = document.getElementById('formatted-memories');
+    
+    let html = '<div class="format-section">';
+    html += '<h4>格式化后的记忆</h4>';
+    memories.forEach((m, i) => {
+        html += `
+            <div class="format-item">
+                <div class="format-header">
+                    <select class="format-type-select" data-index="${i}">
+                        <option value="outline" ${m.type === 'outline' ? 'selected' : ''}>大纲</option>
+                        <option value="character" ${m.type === 'character' ? 'selected' : ''}>人物</option>
+                        <option value="scene" ${m.type === 'scene' ? 'selected' : ''}>场景</option>
+                        <option value="plot" ${m.type === 'plot' ? 'selected' : ''}>剧情</option>
+                        <option value="callback" ${m.type === 'callback' ? 'selected' : ''}>伏笔</option>
+                        <option value="worldbuilding" ${m.type === 'worldbuilding' ? 'selected' : ''}>世界观</option>
+                        <option value="note" ${m.type === 'note' ? 'selected' : ''}>笔记</option>
+                    </select>
+                    <input type="text" class="format-title-input" value="${escapeHtml(m.title || '')}" placeholder="标题">
+                </div>
+                <textarea class="format-content-textarea" rows="3" placeholder="内容">${escapeHtml(m.content || '')}</textarea>
+                <input type="text" class="format-tags-input" value="${escapeHtml((m.tags || []).join(', '))}" placeholder="标签">
+            </div>
+        `;
+    });
+    html += '</div>';
+
+    if (relatedMemories && relatedMemories.length > 0) {
+        html += '<div class="format-section">';
+        html += `<h4>匹配到的相关记忆 (${relatedMemories.length}条)</h4>`;
+        relatedMemories.forEach(m => {
+            html += `
+                <div class="related-match-item">
+                    <label class="match-checkbox">
+                        <input type="checkbox" class="match-select" value="${m.id}" checked>
+                        <span class="match-type">${getTypeIcon(m.type)} ${getTypeName(m.type)}</span>
+                        <span class="match-title">${escapeHtml(m.name || m.title || '无标题')}</span>
+                    </label>
+                    <div class="match-content">${escapeHtml(m.content.substring(0, 80))}${m.content.length > 80 ? '...' : ''}</div>
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
+    container.innerHTML = html;
+    document.getElementById('format-result').style.display = 'block';
+}
+
+async function confirmUpdate() {
+    if (!formattedResult) return;
+
+    // 收集格式化后的记忆
+    const memories = [];
+    document.querySelectorAll('.format-item').forEach((item, i) => {
+        memories.push({
+            type: item.querySelector('.format-type-select').value,
+            title: item.querySelector('.format-title-input').value,
+            content: item.querySelector('.format-content-textarea').value,
+            tags: item.querySelector('.format-tags-input').value.split(/[,，]/).map(t => t.trim()).filter(t => t),
+        });
+    });
+
+    // 收集选中的匹配记忆
+    const matchedIds = [];
+    document.querySelectorAll('.match-select:checked').forEach(cb => {
+        matchedIds.push(cb.value);
+    });
+
+    try {
+        // 1. 保存新记忆
+        const saveRes = await api('/api/inspirations/confirm', {
+            method: 'POST',
+            body: { memories }
+        });
+
+        if (saveRes.code !== 0) {
+            showMessage(saveRes.message, 'error');
+            return;
+        }
+
+        // 2. 更新当前实体（如果有修改）
+        const currentEntityUpdate = memories.find(m => m.type === entityType);
+        if (currentEntityUpdate) {
+            await api(`/api/memories/${entityId}`, {
+                method: 'PUT',
+                body: {
+                    content: currentEntityUpdate.content,
+                    tags: currentEntityUpdate.tags
+                }
+            });
+        }
+
+        // 3. 更新匹配的记忆（添加关联）
+        if (matchedIds.length > 0) {
+            await api('/api/memories/link', {
+                method: 'POST',
+                body: {
+                    source_id: entityId,
+                    target_ids: matchedIds
+                }
+            });
+        }
+
+        showMessage('更新成功！');
+        setTimeout(() => window.location.reload(), 1000);
+
+    } catch (e) {
+        showMessage('更新失败: ' + e.message, 'error');
+    }
+}
+
+function cancelUpdate() {
+    document.getElementById('format-result').style.display = 'none';
+    formattedResult = null;
+}
+
+function navigateToEntity(id, type) {
+    window.location.href = `/entity/${id}`;
+}
+
+async function deleteEntity() {
+    if (!confirm('确定要删除这个实体吗？此操作不可恢复。')) return;
+
+    try {
+        const res = await api(`/api/memories/${entityId}`, { method: 'DELETE' });
+        if (res.code === 0) {
+            showMessage('删除成功');
+            setTimeout(() => window.location.href = `/${type}s`, 1000);
+        } else {
+            showMessage(res.message, 'error');
+        }
+    } catch (e) {
+        showMessage('删除失败: ' + e.message, 'error');
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function getTypeIcon(type) {
+    const icons = {
+        outline: '📋', character: '👤', scene: '📍',
+        plot: '📖', callback: '🔗', worldbuilding: '🌍', note: '📝'
+    };
+    return icons[type] || '📄';
+}
+
+function getTypeName(type) {
+    const names = {
+        outline: '大纲', character: '人物', scene: '场景',
+        plot: '剧情', callback: '伏笔', worldbuilding: '世界观', note: '笔记'
+    };
+    return names[type] || type;
+}
+</script>
+
+<style>
+.entity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.entity-header-main {
+    flex: 1;
+}
+
+.entity-name {
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.entity-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.entity-content {
+    margin-bottom: 20px;
+}
+
+.content-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.content-card h3 {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.content-text {
+    line-height: 1.8;
+    white-space: pre-wrap;
+    margin-bottom: 16px;
+}
+
+.entity-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.inspiration-section,
+.format-result {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.inspiration-section h3,
+.format-result h3 {
+    margin-bottom: 16px;
+}
+
+.format-section {
+    margin-bottom: 20px;
+}
+
+.format-section h4 {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.format-item {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.format-header {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.format-type-select {
+    padding: 4px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.format-title-input {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.format-content-textarea,
+.format-tags-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.related-match-item {
+    padding: 12px;
+    background: var(--bg-color);
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.match-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.match-type {
+    font-size: 12px;
+    color: var(--primary-color);
+}
+
+.match-title {
+    font-weight: 500;
+}
+
+.match-content {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    margin-left: 24px;
+}
+
+.related-section {
+    margin-bottom: 20px;
+}
+
+.related-section h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.related-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.related-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.related-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.related-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.related-type {
+    font-size: 12px;
+    color: var(--primary-color);
+}
+
+.related-title {
+    font-weight: 500;
+}
+
+.related-content {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.entity-mini-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.entity-mini-item {
+    display: block;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+}
+
+.entity-mini-item:hover {
+    border-color: var(--primary-color);
+}
+
+.entity-mini-name {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.entity-mini-preview {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.entity-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.meta-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.meta-label {
+    color: var(--text-secondary);
+}
+
+.meta-value {
+    color: var(--text-color);
+}
+
+@media (max-width: 768px) {
+    .entity-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .entity-name {
+        font-size: 20px;
+    }
+
+    .entity-actions {
+        width: 100%;
+    }
+
+    .entity-actions .btn {
+        flex: 1;
+    }
+
+    .format-header {
+        flex-direction: column;
+    }
+
+    .format-type-select,
+    .format-title-input {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

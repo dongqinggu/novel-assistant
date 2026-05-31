@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}全部记忆 - 创意工坊{% endblock %}
+
+{% block content %}
+<div class="memories-page">
+    <div class="page-header">
+        <h2 class="page-title">📚 全部记忆</h2>
+    </div>
+    
+    <!-- 筛选区 -->
+    <div class="filter-section">
+        <form method="get" class="filter-form">
+            <select name="type" class="filter-select" onchange="this.form.submit()">
+                <option value="all" {% if current_type == 'all' %}selected{% endif %}>全部类型</option>
+                <option value="outline" {% if current_type == 'outline' %}selected{% endif %}>大纲</option>
+                <option value="character" {% if current_type == 'character' %}selected{% endif %}>人物</option>
+                <option value="scene" {% if current_type == 'scene' %}selected{% endif %}>场景</option>
+                <option value="plot" {% if current_type == 'plot' %}selected{% endif %}>剧情</option>
+                <option value="callback" {% if current_type == 'callback' %}selected{% endif %}>伏笔</option>
+                <option value="worldbuilding" {% if current_type == 'worldbuilding' %}selected{% endif %}>世界观</option>
+                <option value="note" {% if current_type == 'note' %}selected{% endif %}>笔记</option>
+            </select>
+            
+            <input 
+                type="text" 
+                name="search" 
+                class="filter-input" 
+                placeholder="搜索记忆..." 
+                value="{{ search_query }}"
+            >
+            
+            <button type="submit" class="btn btn-sm">搜索</button>
+            <a href="/memories" class="btn btn-sm btn-secondary">重置</a>
+        </form>
+    </div>
+    
+    {% if memories %}
+    <div class="memory-list">
+        {% for memory in memories %}
+        <div class="memory-item" data-id="{{ memory.id }}">
+            <div class="memory-header">
+                <span class="memory-type-badge type-{{ memory.type }}">{{ memory.type_display }}</span>
+                <span class="memory-title">{{ memory.title }}</span>
+                <span class="memory-date">{{ memory.updated_at[:10] }}</span>
+            </div>
+            <div class="memory-content">{{ memory.content }}</div>
+            {% if memory.tags %}
+            <div class="memory-tags">
+                {% for tag in memory.tags %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="memory-actions">
+                <button class="btn btn-sm" onclick="editMemory('{{ memory.id }}')">编辑</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteMemory('{{ memory.id }}')">删除</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>暂无记忆</p>
+        <p class="hint">在灵感箱中输入构思，生成后确认入库</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block right_panel %}
+<div class="panel-section">
+    <h3>📊 统计</h3>
+    <p>当前显示: {{ memories|length }}</p>
+    <p>总计: {{ stats.total }}</p>
+</div>
+
+<div class="panel-section">
+    <h3>📥 导出</h3>
+    <a href="/api/export" class="btn btn-sm btn-block" target="_blank">导出全部 JSON</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editMemory(id) {
+    alert('编辑功能开发中: ' + id);
+}
+
+async function deleteMemory(id) {
+    if (!confirm('确定删除这条记忆吗？')) return;
+    
+    try {
+        const resp = await fetch(`/api/memories/${id}`, { method: 'DELETE' });
+        const data = await resp.json();
+        if (data.code === 0) {
+            window.location.reload();
+        } else {
+            alert('删除失败: ' + data.message);
+        }
+    } catch (e) {
+        alert('删除失败: ' + e.message);
+    }
+}
+</script>
+{% endblock %}
